@@ -1,0 +1,23 @@
+const assert=require('node:assert/strict');
+const C=require('./core.js');
+assert.deepEqual(C.parseWords('Apple, apple；break the ice\n curious; curious'),['apple','break the ice','curious']);
+assert.equal(C.addDays('2026-12-31',1),'2027-01-01');
+assert.equal(C.addDays('2028-02-28',1),'2028-02-29');
+assert.equal(C.validDay('2026-02-30'),false);
+let w=C.normalize({w:'Apple',def:'苹果',addedAt:'2026/10/1'},0,'2026-10-01');
+assert.equal(w.next,'2026-10-02');
+for(const date of ['2026-10-02','2026-10-03','2026-10-05','2026-10-08','2026-10-16','2026-10-31']){assert.equal(w.next,date);w=C.answer(w,true,date);assert.equal(C.answer(w,true,date),w);}
+assert.equal(w.stage,6);assert.equal(w.next,null);assert.equal(C.due([w],'2026-11-01').length,0);
+let late=C.normalize({w:'late',def:'迟',addedAt:'2026-10-01'},2);
+late=C.answer(late,true,'2026-11-01');assert.equal(late.stage,3);assert.equal(late.next,'2026-11-04');
+const forgotten=C.answer({...late,next:'2026-11-02'},false,'2026-11-02');assert.equal(forgotten.stage,3);assert.equal(forgotten.next,'2026-11-03');assert.equal(C.answer(forgotten,true,'2026-11-02'),forgotten);
+const missing=C.normalize({w:'missing',def:'',addedAt:'2026-10-01'},0);assert.equal(C.due([missing],'2026-11-01').length,0);
+assert.equal(C.normalize({w:'old'},3,'2026-10-22').next,'2026-10-23');
+assert.equal(C.normalize({w:'old'},3,'2026-10-22').logs.length,0);
+const backlog=Array.from({length:25},(_,i)=>C.normalize({w:'word'+i,def:'词',addedAt:`2026-10-${String(i+1).padStart(2,'0')}`}));
+assert.equal(C.due(backlog,'2026-11-01').length,25);assert.equal(C.due(backlog,'2026-11-01')[0].id,'word0');
+const body=Array.from({length:20},(_,i)=>`Paragraph ${i+1}: `+'context '.repeat(100)).join('\n\n');
+const ctx=C.context(body,{indices:[19],text:'last paragraph'},'why',4000);assert.ok(ctx.text.includes('Paragraph 20'));assert.ok(ctx.indices.includes(18));assert.ok(ctx.text.length<=4000);assert.match(ctx.scope,/部分正文/);
+assert.equal(C.context('short text',null,'why').scope,'全文');
+assert.ok(C.chunks(body,4000).every(chunk=>chunk.length<=4000));assert.ok(C.chunks(body,4000).join('').includes('Paragraph 20'));
+console.log('Core checks passed: scheduling, repeat protection, legacy normalization, word parsing, long-article context.');

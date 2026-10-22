@@ -1,0 +1,21 @@
+const assert=require('node:assert/strict'),path=require('node:path');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'C:/Users/love/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+(async()=>{const browser=await chromium.launch({channel:'chrome',headless:true});try{
+ const p=await browser.newPage({viewport:{width:1366,height:900}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+ await p.goto(require('node:url').pathToFileURL(path.join(__dirname,'index.html')).href);
+ assert.equal(await p.locator('[data-page="assistant"]').count(),0);assert.equal(await p.getByText('全屏 AI 助教',{exact:true}).count(),0);
+ const launch=p.locator('.assistant-launcher'),window=p.locator('.assistant-float');
+ await launch.click();await p.locator('#chat-input').fill('这个词在句子里具体是什么意思？');
+ const grip=p.locator('#float-drag'),before=await window.boundingBox(),handle=await grip.boundingBox();
+ await p.mouse.move(handle.x+55,handle.y+20);await p.mouse.down();await p.mouse.move(350,280,{steps:20});await p.mouse.up();
+ const moved=await window.boundingBox();assert.ok(Math.abs(moved.x-before.x)>100);assert.ok(moved.y>before.y+50);
+ await p.locator('[data-page="study"]').click();assert.ok(await window.isVisible());assert.equal(await p.locator('#chat-input').inputValue(),'这个词在句子里具体是什么意思？');assert.equal((await window.boundingBox()).x,moved.x);
+ await p.locator('[data-action="minimize-chat"]').click();assert.ok(await launch.isVisible());await launch.click();assert.equal(await p.locator('#chat-input').inputValue(),'这个词在句子里具体是什么意思？');assert.equal((await window.boundingBox()).x,moved.x);
+ await grip.focus();await p.keyboard.press('ArrowLeft');assert.equal(Math.round((await window.boundingBox()).x),Math.round(moved.x-10));
+ await p.screenshot({path:path.join(__dirname,'verification-floating-drag.png'),animations:'disabled'});
+ await p.locator('[data-action="minimize-chat"]').click();const lr=await launch.boundingBox();await p.mouse.move(lr.x+20,lr.y+20);await p.mouse.down();await p.mouse.move(80,160,{steps:15});await p.mouse.up();assert.ok(await launch.isVisible());assert.ok((await launch.boundingBox()).x<150);
+ await p.reload();assert.ok((await launch.boundingBox()).x<150);await launch.click();assert.equal(await p.locator('#chat-input').inputValue(),'这个词在句子里具体是什么意思？');
+ await p.setViewportSize({width:390,height:844});const mobile=await window.boundingBox();assert.ok(mobile.x>=0&&mobile.x+mobile.width<=390&&mobile.y+mobile.height<=844);await p.locator('#float-drag').focus();for(let i=0;i<30;i++)await p.keyboard.press('Shift+ArrowRight');const edge=await window.boundingBox();assert.ok(edge.x+edge.width<=390);
+ await p.screenshot({path:path.join(__dirname,'verification-floating-mobile.png'),animations:'disabled'});
+ assert.deepEqual(errors,[]);console.log('Floating checks passed: draggable window and launcher, keyboard movement, cross-page drafts, minimize/reopen, persisted position, viewport clamp, no fullscreen/nav.');
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

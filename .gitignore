@@ -1,0 +1,13 @@
+_script_check.js
+temp_check.js
+__pycache__/
+outputs/.qoder/
+*.backup-*.html
+
+.local-backups/
+
+.publish/
+
+**/verification-*.png
+
+outputs/tt-study-apple-motion/dialog.png
