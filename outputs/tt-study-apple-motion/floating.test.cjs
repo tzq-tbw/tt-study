@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),path=require('node:path');
-const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'C:/Users/love/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||require('os').homedir()+'/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 (async()=>{const browser=await chromium.launch({channel:'chrome',headless:true});try{
  const p=await browser.newPage({viewport:{width:1366,height:900}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.goto(require('node:url').pathToFileURL(path.join(__dirname,'index.html')).href);

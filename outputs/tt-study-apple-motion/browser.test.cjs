@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'C:/Users/love/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||require('os').homedir()+'/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const root=__dirname;
 (async()=>{const browser=await chromium.launch({channel:'chrome',headless:true});try{const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(require('node:url').pathToFileURL(path.join(root,'index.html')).href);const nav=async name=>page.locator('[data-page="'+name+'"]').click();
 await nav('errors');await page.getByRole('button',{name:'＋ 添加单词'}).click();await page.locator('#word-input').fill('Apple; apple\nbreak the ice; unknownword');await page.getByRole('button',{name:'检查词条'}).click();assert.equal(await page.locator('[data-def]').count(),3);await page.locator('[data-def="1"]').fill('打破僵局');await page.locator('[data-def="2"]').fill('测试词');await page.getByRole('button',{name:'保存到错题本'}).click();assert.equal(await page.locator('.word-grid .panel').count(),3);
